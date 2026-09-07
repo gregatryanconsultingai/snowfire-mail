@@ -9,3 +9,6 @@ credentials/
 .env.*
 !.env.example
 .DS_Store
+
+# Archify visual QA captures are reproducible local sidecars.
+docs/*.visual-check.*

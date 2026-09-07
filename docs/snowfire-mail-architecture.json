@@ -1,0 +1,318 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "SnowFire Mail — Local-First Desktop Architecture",
+    "locale": "en",
+    "output": "snowfire-mail-architecture.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/gregatryanconsultingai/snowfire-mail",
+      "revision": "3b5031be48f6cb01d134c2ba9fcf8c7adb554d8c"
+    },
+    "viewBox": [1340, 720]
+  },
+  "components": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "Mail User",
+      "sublabel": "Omarchy desktop",
+      "pos": [32, 286],
+      "size": [130, 72]
+    },
+    {
+      "id": "react_ui",
+      "type": "frontend",
+      "label": "SnowFire Workspace",
+      "sublabel": "React inbox, calendar, contacts",
+      "tag": "Renderer",
+      "brand": "react",
+      "pos": [220, 276],
+      "size": [184, 88],
+      "sources": [
+        {"path": "src/App.tsx", "line": 370, "label": "Application state and UI"},
+        {"path": "src/CalendarWorkspace.tsx", "line": 70, "label": "Calendar workspace"}
+      ]
+    },
+    {
+      "id": "automation",
+      "type": "backend",
+      "label": "Organization Engine",
+      "sublabel": "Folders, labels, routing, search",
+      "tag": "1-minute routing loop",
+      "pos": [220, 448],
+      "size": [184, 88],
+      "sources": [
+        {"path": "src/App.tsx", "line": 447, "label": "Sender routing"},
+        {"path": "src/App.tsx", "line": 482, "label": "Automation timer"}
+      ]
+    },
+    {
+      "id": "preload",
+      "type": "security",
+      "label": "Preload API Bridge",
+      "sublabel": "Typed window.snowfire surface",
+      "tag": "Context isolated",
+      "pos": [472, 276],
+      "size": [174, 88],
+      "sources": [
+        {"path": "electron/preload.cjs", "line": 2, "label": "IPC exposure"},
+        {"path": "src/global.d.ts", "line": 8, "label": "Renderer contract"}
+      ]
+    },
+    {
+      "id": "electron_main",
+      "type": "backend",
+      "label": "Electron Main Process",
+      "sublabel": "IPC handlers and OS integration",
+      "tag": "Trusted sender gate",
+      "pos": [718, 276],
+      "size": [182, 88],
+      "sources": [
+        {"path": "electron/main.cjs", "line": 96, "label": "Trusted IPC origin"},
+        {"path": "electron/main.cjs", "line": 105, "label": "Desktop shell"}
+      ]
+    },
+    {
+      "id": "google_adapter",
+      "type": "backend",
+      "label": "Google API Adapter",
+      "sublabel": "OAuth, MIME, parsing, sanitization",
+      "tag": "gmail.cjs",
+      "pos": [970, 276],
+      "size": [188, 88],
+      "sources": [
+        {"path": "electron/gmail.cjs", "line": 64, "label": "OAuth 2.0 + PKCE"},
+        {"path": "electron/gmail.cjs", "line": 107, "label": "API clients"},
+        {"path": "electron/gmail.cjs", "line": 230, "label": "HTML sanitization"}
+      ]
+    },
+    {
+      "id": "gmail_api",
+      "type": "cloud",
+      "label": "Gmail API",
+      "sublabel": "Mail, labels, files",
+      "tag": "gmail.modify",
+      "pos": [1190, 112],
+      "size": [136, 76],
+      "sources": [
+        {"path": "electron/gmail.cjs", "line": 107, "label": "Gmail REST client"},
+        {"path": "electron/gmail.cjs", "line": 266, "label": "Message operations"}
+      ]
+    },
+    {
+      "id": "people_api",
+      "type": "cloud",
+      "label": "People API",
+      "sublabel": "Google Contacts",
+      "tag": "contacts scope",
+      "pos": [1190, 284],
+      "size": [136, 76],
+      "sources": [
+        {"path": "electron/gmail.cjs", "line": 112, "label": "People REST client"},
+        {"path": "electron/gmail.cjs", "line": 134, "label": "Contact operations"}
+      ]
+    },
+    {
+      "id": "calendar_api",
+      "type": "cloud",
+      "label": "Calendar API",
+      "sublabel": "Events and availability",
+      "tag": "selected calendars",
+      "pos": [1190, 456],
+      "size": [136, 76],
+      "sources": [
+        {"path": "electron/gmail.cjs", "line": 117, "label": "Calendar REST client"},
+        {"path": "electron/gmail.cjs", "line": 174, "label": "Calendar operations"}
+      ]
+    },
+    {
+      "id": "send_queue",
+      "type": "messagebus",
+      "label": "Delayed Send Queue",
+      "sublabel": "Cancelable in-memory delivery",
+      "tag": "60-second undo",
+      "pos": [718, 462],
+      "size": [182, 82],
+      "sources": [
+        {"path": "electron/main.cjs", "line": 46, "label": "Pending send lifecycle"},
+        {"path": "electron/main.cjs", "line": 68, "label": "Queue and undo"}
+      ]
+    },
+    {
+      "id": "local_metadata",
+      "type": "database",
+      "label": "Local App Metadata",
+      "sublabel": "Rules, settings, snoozes",
+      "tag": "0600 JSON + files",
+      "pos": [472, 520],
+      "size": [190, 92],
+      "sources": [
+        {"path": "electron/main.cjs", "line": 24, "label": "Icons and rule metadata"},
+        {"path": "electron/main.cjs", "line": 88, "label": "Folder order and settings"},
+        {"path": "electron/gmail.cjs", "line": 260, "label": "Local snooze state"}
+      ]
+    },
+    {
+      "id": "credential_vault",
+      "type": "security",
+      "label": "Credential Vault",
+      "sublabel": "Keyring + encrypted fallback",
+      "tag": "OAuth tokens",
+      "pos": [970, 548],
+      "size": [188, 92],
+      "sources": [
+        {"path": "electron/gmail.cjs", "line": 24, "label": "Secret Service keyring"},
+        {"path": "electron/gmail.cjs", "line": 30, "label": "Encrypted fallback"},
+        {"path": "electron/gmail.cjs", "line": 35, "label": "Credential persistence"}
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "SnowFire Mail desktop application",
+      "wraps": ["react_ui", "automation", "preload", "electron_main", "google_adapter", "send_queue", "local_metadata", "credential_vault"],
+      "pad": 32
+    },
+    {
+      "kind": "security-group",
+      "label": "Sandboxed renderer trust boundary",
+      "wraps": ["react_ui", "automation", "preload"],
+      "pad": 12
+    },
+    {
+      "kind": "region",
+      "label": "Google Workspace",
+      "wraps": ["gmail_api", "people_api", "calendar_api"],
+      "pad": 12
+    }
+  ],
+  "connections": [
+    {
+      "id": "user_to_ui",
+      "from": "user",
+      "to": "react_ui",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ui_to_bridge",
+      "from": "react_ui",
+      "to": "preload",
+      "label": "window.snowfire calls",
+      "labelAt": [520, 388],
+      "variant": "security"
+    },
+    {
+      "id": "automation_to_bridge",
+      "from": "automation",
+      "to": "preload",
+      "label": "route and folder mutations"
+    },
+    {
+      "id": "ui_to_automation",
+      "from": "react_ui",
+      "to": "automation",
+      "label": "rules and organization",
+      "labelAt": [312, 400]
+    },
+    {
+      "id": "bridge_to_main",
+      "from": "preload",
+      "to": "electron_main",
+      "label": "validated IPC invoke",
+      "labelAt": [682, 258],
+      "variant": "security"
+    },
+    {
+      "id": "main_to_adapter",
+      "from": "electron_main",
+      "to": "google_adapter",
+      "label": "service calls"
+    },
+    {
+      "id": "adapter_to_gmail",
+      "from": "google_adapter",
+      "to": "gmail_api",
+      "label": "HTTPS REST + bearer token",
+      "variant": "emphasis"
+    },
+    {
+      "id": "adapter_to_people",
+      "from": "google_adapter",
+      "to": "people_api",
+      "label": "contacts REST",
+      "labelAt": [1220, 400]
+    },
+    {
+      "id": "adapter_to_calendar",
+      "from": "google_adapter",
+      "to": "calendar_api",
+      "label": "events REST"
+    },
+    {
+      "id": "main_to_queue",
+      "from": "electron_main",
+      "to": "send_queue",
+      "label": "queue outgoing message",
+      "labelAt": [809, 402]
+    },
+    {
+      "id": "queue_to_adapter",
+      "from": "send_queue",
+      "to": "google_adapter",
+      "label": "deliver MIME after delay",
+      "labelAt": [860, 596]
+    },
+    {
+      "id": "main_to_metadata",
+      "from": "electron_main",
+      "to": "local_metadata",
+      "label": "read / write private state"
+    },
+    {
+      "id": "adapter_to_metadata",
+      "from": "google_adapter",
+      "to": "local_metadata",
+      "label": "snooze schedule",
+      "labelAt": [780, 642]
+    },
+    {
+      "id": "adapter_to_vault",
+      "from": "google_adapter",
+      "to": "credential_vault",
+      "label": "store / load OAuth session",
+      "labelAt": [1064, 426],
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "orange",
+      "title": "Experience",
+      "items": [
+        "One desktop workspace for Gmail, Contacts, and Calendar",
+        "Nested folders, classification labels, search, and attachment workflows",
+        "No SnowFire server tier: the desktop talks directly to Google APIs"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Automation",
+      "items": [
+        "Exact-sender routing checks Inbox every minute while the app is open",
+        "Local snooze recovery and a cancelable 60-second send window"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Security",
+      "items": [
+        "Context isolation, no renderer Node access, trusted IPC origins, denied web permissions",
+        "Sanitized message HTML; remote images blocked by default; scoped Google OAuth",
+        "Rules and preferences stay local; credentials prefer the OS keyring"
+      ]
+    }
+  ]
+}
