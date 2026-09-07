@@ -10,7 +10,7 @@
       "url": "https://github.com/gregatryanconsultingai/snowfire-mail",
       "revision": "3b5031be48f6cb01d134c2ba9fcf8c7adb554d8c"
     },
-    "viewBox": [1340, 720]
+    "viewBox": [1380, 720]
   },
   "components": [
     {
@@ -78,7 +78,7 @@
       "id": "google_adapter",
       "type": "backend",
       "label": "Google API Adapter",
-      "sublabel": "OAuth, MIME, parsing, sanitization",
+      "sublabel": "OAuth, MIME, safe HTML",
       "tag": "gmail.cjs",
       "pos": [970, 276],
       "size": [188, 88],
@@ -94,7 +94,7 @@
       "label": "Gmail API",
       "sublabel": "Mail, labels, files",
       "tag": "gmail.modify",
-      "pos": [1190, 112],
+      "pos": [1228, 112],
       "size": [136, 76],
       "sources": [
         {"path": "electron/gmail.cjs", "line": 107, "label": "Gmail REST client"},
@@ -107,7 +107,7 @@
       "label": "People API",
       "sublabel": "Google Contacts",
       "tag": "contacts scope",
-      "pos": [1190, 284],
+      "pos": [1228, 284],
       "size": [136, 76],
       "sources": [
         {"path": "electron/gmail.cjs", "line": 112, "label": "People REST client"},
@@ -120,7 +120,7 @@
       "label": "Calendar API",
       "sublabel": "Events and availability",
       "tag": "selected calendars",
-      "pos": [1190, 456],
+      "pos": [1228, 456],
       "size": [136, 76],
       "sources": [
         {"path": "electron/gmail.cjs", "line": 117, "label": "Calendar REST client"},
@@ -243,7 +243,7 @@
       "from": "google_adapter",
       "to": "people_api",
       "label": "contacts REST",
-      "labelAt": [1220, 400]
+      "labelAt": [1265, 400]
     },
     {
       "id": "adapter_to_calendar",
