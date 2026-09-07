@@ -107,7 +107,7 @@
       "label": "People API",
       "sublabel": "Google Contacts",
       "tag": "contacts scope",
-      "pos": [1228, 284],
+      "pos": [1228, 276],
       "size": [136, 76],
       "sources": [
         {"path": "electron/gmail.cjs", "line": 112, "label": "People REST client"},
@@ -241,9 +241,7 @@
     {
       "id": "adapter_to_people",
       "from": "google_adapter",
-      "to": "people_api",
-      "label": "contacts REST",
-      "labelAt": [1265, 400]
+      "to": "people_api"
     },
     {
       "id": "adapter_to_calendar",
