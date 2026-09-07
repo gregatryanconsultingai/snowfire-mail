@@ -14,6 +14,7 @@ type GoogleContact = {resourceName:string;name:string;givenName:string;familyNam
 type ContactDraft = {givenName:string;familyName:string;emails:string[];phone:string;company:string;title:string}
 type SenderLabels = Record<string,string[]>
 type SenderFolderRules = Record<string,string>
+type RoutingFolderNode = {name:string;fullName:string;children:RoutingFolderNode[];rules:string[];count:number}
 type CalendarSlot = {start:string;end:string}
 
 const CONTACT_ICONS_KEY='snowfire-contact-icons'
@@ -133,6 +134,39 @@ function FolderSearchPicker({folders,value,onChange,onCreate}:{folders:GmailLabe
       {createError&&<div className="folder-search-error">{createError}</div>}
     </div>}
   </div>
+}
+
+function RoutingRuleTree({folders,rules,busy,onRemove}:{folders:GmailLabel[];rules:SenderFolderRules;busy:boolean;onRemove:(email:string)=>void}) {
+  const [expanded,setExpanded]=useState<Set<string>>(()=>new Set())
+  const roots=useMemo(()=>{
+    const result:RoutingFolderNode[]=[]
+    for(const [email,folder] of Object.entries(rules)){
+      const parts=folderParts(folder)
+      let children=result,fullName=FOLDER_ROOT,node:RoutingFolderNode|undefined
+      for(const part of parts){
+        fullName=`${fullName}/${part}`
+        node=children.find(item=>item.fullName.toLocaleLowerCase()===fullName.toLocaleLowerCase())
+        if(!node){node={name:part,fullName,children:[],rules:[],count:0};children.push(node)}
+        children=node.children
+      }
+      if(node)node.rules.push(email)
+    }
+    const rank=new Map(folders.map((folder,index)=>[folder.name.toLocaleLowerCase(),index]))
+    const finish=(nodes:RoutingFolderNode[]):number=>{
+      nodes.sort((a,b)=>(rank.get(a.fullName.toLocaleLowerCase())??Number.MAX_SAFE_INTEGER)-(rank.get(b.fullName.toLocaleLowerCase())??Number.MAX_SAFE_INTEGER)||a.name.localeCompare(b.name,undefined,{sensitivity:'base'}))
+      let total=0
+      for(const node of nodes){node.rules.sort((a,b)=>a.localeCompare(b));node.count=node.rules.length+finish(node.children);total+=node.count}
+      return total
+    }
+    finish(result)
+    return result
+  },[folders,rules])
+  const toggle=(name:string)=>setExpanded(current=>{const next=new Set(current);if(next.has(name))next.delete(name);else next.add(name);return next})
+  const renderNode=(node:RoutingFolderNode,depth:number)=>{const open=expanded.has(node.fullName);return <div className="routing-tree-node" role="treeitem" aria-level={depth+1} aria-expanded={open} key={node.fullName}>
+    <button type="button" className="routing-folder-row" style={{'--routing-depth':Math.min(depth,5)} as CSSProperties} onClick={()=>toggle(node.fullName)}><ChevronDown className={open?'open':''} size={12}/><span><Folder size={14}/></span><div><b>{node.name}</b><small>{node.count} sender rule{node.count===1?'':'s'} in this branch</small></div><i>{node.count}</i></button>
+    {open&&<div className="routing-tree-children" role="group">{node.children.map(child=>renderNode(child,depth+1))}{node.rules.map(email=><div className="routing-tree-rule" style={{'--routing-depth':Math.min(depth+1,6)} as CSSProperties} role="treeitem" aria-level={depth+2} key={email}><span><Mail size={13}/></span><div><b>{email}</b><small>Exact sender match</small></div><button type="button" aria-label={`Remove routing rule for ${email}`} title="Remove rule" disabled={busy} onClick={()=>onRemove(email)}><X size={14}/></button></div>)}</div>}
+  </div>}
+  return <div className="routing-rule-tree" role="tree" aria-label="Routing rules by destination folder">{roots.length?roots.map(node=>renderNode(node,0)):<p>No sender rules yet.</p>}</div>
 }
 
 function FolderDashboard({folders,allFolders,messagesByFolder,loading,error,folderNameInput,parent,busy,createError,onRefresh,onOpenFolder,onOpenMessage,onStartCreate,onNameChange,onParentChange,onCreate}:{folders:GmailLabel[];allFolders:GmailLabel[];messagesByFolder:Record<string,Message[]>;loading:boolean;error:string;folderNameInput:string;parent:string;busy:boolean;createError:string;onRefresh:()=>void;onOpenFolder:(folder:GmailLabel)=>void;onOpenMessage:(folder:GmailLabel,message:Message)=>void;onStartCreate:(parent:string)=>void;onNameChange:(value:string)=>void;onParentChange:(value:string)=>void;onCreate:(event:FormEvent)=>void}) {
@@ -722,7 +756,7 @@ function App() {
     </section></div>}
     {routingManager&&<div className="label-modal-backdrop" onMouseDown={()=>{if(!ruleBusy)setRoutingManager(false)}}><section className="label-manager routing-manager" role="dialog" aria-modal="true" aria-labelledby="routing-manager-title" onMouseDown={event=>event.stopPropagation()}>
       <header><div><span className="label-manager-kicker">GMAIL / AUTOMATION</span><h2 id="routing-manager-title">Routing rules</h2><p>Search or create a destination folder, then route mail using the sender's exact address.</p></div><button className="label-manager-close" aria-label="Close routing rules" disabled={ruleBusy} onClick={()=>setRoutingManager(false)}><X size={18}/></button></header>
-      <section className="folder-routing routing-only"><header><div><FolderInput size={17}/><span><b>Sender routing rules</b><small>Checks new Inbox mail every minute while SnowFire is open.</small></span></div><i>{Object.keys(senderFolderRules).length}</i></header><form onSubmit={event=>{event.preventDefault();createSenderFolderRule()}}><input autoFocus type="email" aria-label="Sender email address" value={ruleEmail} onChange={event=>setRuleEmail(event.target.value)} placeholder="sender@company.com"/><FolderSearchPicker folders={orderedFolderLabels} value={ruleFolder} onChange={setRuleFolder} onCreate={createRoutingFolder}/><button disabled={ruleBusy||!ruleEmail.trim()||!ruleFolder}><Plus size={14}/>{ruleBusy?'Saving…':'Save rule'}</button></form>{!orderedFolderLabels.length&&<div className="routing-folder-note">Search above to create your first folder without leaving routing rules.</div>}{ruleError&&<div className="routing-rule-error">{ruleError}</div>}<div className="routing-rule-list">{Object.entries(senderFolderRules).sort(([a],[b])=>a.localeCompare(b)).map(([email,folderName])=><div key={email}><span><Mail size={14}/></span><div><b>{email}</b><small>Move to {folderParts(folderName).join(' / ')}</small></div><button aria-label={`Remove routing rule for ${email}`} title="Remove rule" disabled={ruleBusy} onClick={()=>removeSenderFolderRule(email)}><X size={14}/></button></div>)}{!Object.keys(senderFolderRules).length&&<p>No sender rules yet.</p>}</div></section>
+      <section className="folder-routing routing-only"><header><div><FolderInput size={17}/><span><b>Sender routing rules</b><small>Checks new Inbox mail every minute while SnowFire is open.</small></span></div><i>{Object.keys(senderFolderRules).length}</i></header><form onSubmit={event=>{event.preventDefault();createSenderFolderRule()}}><input autoFocus type="email" aria-label="Sender email address" value={ruleEmail} onChange={event=>setRuleEmail(event.target.value)} placeholder="sender@company.com"/><FolderSearchPicker folders={orderedFolderLabels} value={ruleFolder} onChange={setRuleFolder} onCreate={createRoutingFolder}/><button disabled={ruleBusy||!ruleEmail.trim()||!ruleFolder}><Plus size={14}/>{ruleBusy?'Saving…':'Save rule'}</button></form>{!orderedFolderLabels.length&&<div className="routing-folder-note">Search above to create your first folder without leaving routing rules.</div>}{ruleError&&<div className="routing-rule-error">{ruleError}</div>}<RoutingRuleTree folders={orderedFolderLabels} rules={senderFolderRules} busy={ruleBusy} onRemove={removeSenderFolderRule}/></section>
     </section></div>}
     {connected===false&&<div className="auth-gate"><div className="auth-card"><img src="./brand/snowfire_logo_title_right_light.svg" alt="SnowFire"/><span className="auth-kicker">MAIL / GOOGLE CONNECTION</span><h2>{upgradeRequired?'Add Calendar access.':'Bring your Gmail into SnowFire.'}</h2><p>{upgradeRequired?'Reconnect once so SnowFire can show, create, and edit Google Calendar events alongside your mail.':'Your browser handles Google sign-in. Mail stays between this device and Gmail. After approval, SnowFire saves the connection in your system keyring, with a permission-locked local fallback.'}</p>{!upgradeRequired&&<><label>Desktop OAuth client JSON or client ID<textarea value={credential} onChange={e=>setCredential(e.target.value)} placeholder={'Paste the downloaded OAuth JSON here\n—or paste the client ID'}/></label><button className="oauth-file" onClick={chooseCredentialFile}><FileText size={15}/>{credential.trim()?'Choose a different JSON file':'Choose OAuth JSON file'}</button></>}{authError&&<div className="auth-error">{authError}</div>}<button className="connect-btn" disabled={!upgradeRequired&&!credential.trim()} onClick={connectGmail}>{upgradeRequired?'Reconnect Google':'Continue with Google'} <ArrowLeft size={16}/></button><small>{upgradeRequired?'Your saved OAuth client will be reused.':'Requires the Gmail, People, and Calendar APIs enabled in your Google Cloud project.'}</small></div></div>}
     {folderContextMenu&&<div className="folder-context-menu" style={{left:folderContextMenu.x,top:folderContextMenu.y}} onClick={event=>event.stopPropagation()}><header><Folder size={13}/><span>{folderParts(folderContextMenu.label.name).join(' / ')}</span></header><button onClick={()=>beginFolderCreate(folderParent(folderContextMenu.label.name)===FOLDER_ROOT?'':folderParent(folderContextMenu.label.name))}><Plus size={15}/><span><b>Add folder</b><small>At the same level</small></span></button><button onClick={()=>beginFolderCreate(folderContextMenu.label.name)}><FolderInput size={15}/><span><b>Add subfolder</b><small>Inside {folderName(folderContextMenu.label.name)}</small></span></button></div>}
