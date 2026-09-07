@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">SnowFire Customers — Community</title>
+  <defs>
+    <g id="sf">
+      <path d="M0 32L22 0L44 32Z" fill="#FFCC00"/>
+      <path d="M0 32L13 12L24 32Z" fill="#FD7401"/>
+      <path d="M44 32L31 12L20 32Z" fill="#F9A81A"/>
+      <path d="M0 32H44L22 46Z" fill="#007AFF"/>
+      <path d="M0 32L22 64V46Z" fill="#00CCFF"/>
+      <path d="M44 32L22 64V46Z" fill="#99FFFF"/>
+    </g>
+  </defs>
+  <use href="#sf" transform="translate(42 32)"/>
+  <circle cx="23" cy="64" r="6" fill="#FD7401"/>
+  <circle cx="105" cy="64" r="6" fill="#00CCFF"/>
+  <path d="M29 64H42M86 64H99" stroke="#A8B0BA" stroke-width="3" stroke-linecap="round"/>
+</svg>

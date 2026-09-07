@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">SnowFire Customers — Constellation</title>
+  <defs>
+    <g id="sf">
+      <path d="M0 32L22 0L44 32Z" fill="#FFCC00"/>
+      <path d="M0 32L13 12L24 32Z" fill="#FD7401"/>
+      <path d="M44 32L31 12L20 32Z" fill="#F9A81A"/>
+      <path d="M0 32H44L22 46Z" fill="#007AFF"/>
+      <path d="M0 32L22 64V46Z" fill="#00CCFF"/>
+      <path d="M44 32L22 64V46Z" fill="#99FFFF"/>
+    </g>
+  </defs>
+  <path d="M28 43L64 64L100 43M64 64L38 96M64 64L90 96" fill="none" stroke="#A8B0BA" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="28" cy="43" r="7" fill="#FF8904"/>
+  <circle cx="100" cy="43" r="7" fill="#FFCC00"/>
+  <circle cx="38" cy="96" r="7" fill="#22D3EE"/>
+  <circle cx="90" cy="96" r="7" fill="#99FFFF"/>
+  <use href="#sf" transform="translate(47.5 40) scale(.75)"/>
+</svg>

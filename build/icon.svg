@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">SnowFire Mail app icon</title>
+  <desc id="desc">The SnowFire flame and ice mark on a deep obsidian tile with a subtle warm and cool glow.</desc>
+  <defs>
+    <linearGradient id="tile" x1="110" y1="72" x2="884" y2="956" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#181820"/>
+      <stop offset="0.48" stop-color="#0B0B10"/>
+      <stop offset="1" stop-color="#050507"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="160" y1="72" x2="824" y2="956" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity=".18"/>
+      <stop offset=".32" stop-color="#FF8A04" stop-opacity=".10"/>
+      <stop offset=".66" stop-color="#22D3EE" stop-opacity=".10"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity=".035"/>
+    </linearGradient>
+    <radialGradient id="warm" cx="0" cy="0" r="1" gradientTransform="translate(468 350) rotate(90) scale(350)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF6A00" stop-opacity=".25"/>
+      <stop offset="1" stop-color="#FF6A00" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="cool" cx="0" cy="0" r="1" gradientTransform="translate(556 672) rotate(90) scale(340)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#08BFFF" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#08BFFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="28" stdDeviation="32" flood-color="#000" flood-opacity=".68"/>
+    </filter>
+    <filter id="inner" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+    <clipPath id="tileClip"><rect x="72" y="72" width="880" height="880" rx="224"/></clipPath>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <rect x="72" y="72" width="880" height="880" rx="224" fill="url(#tile)"/>
+    <g clip-path="url(#tileClip)">
+      <rect x="72" y="72" width="880" height="880" fill="url(#warm)"/>
+      <rect x="72" y="72" width="880" height="880" fill="url(#cool)"/>
+      <ellipse cx="512" cy="510" rx="288" ry="292" fill="#FFFFFF" fill-opacity=".018" filter="url(#inner)"/>
+      <path d="M176 811C333 748 691 748 848 811" fill="none" stroke="#FFFFFF" stroke-opacity=".025" stroke-width="2"/>
+    </g>
+    <rect x="73" y="73" width="878" height="878" rx="223" fill="none" stroke="url(#edge)" stroke-width="2"/>
+  </g>
+
+  <!-- A quiet, unmistakable envelope silhouette. The SnowFire mark becomes its seal. -->
+  <g>
+    <rect x="224" y="294" width="576" height="436" rx="88" fill="#111118" stroke="#F5F7FA" stroke-opacity=".92" stroke-width="18"/>
+    <path d="M246 332L480 520C499 535 525 535 544 520L778 332" fill="none" stroke="#F5F7FA" stroke-opacity=".92" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M245 691L434 516M779 691L590 516" fill="none" stroke="#F5F7FA" stroke-opacity=".48" stroke-width="14" stroke-linecap="round"/>
+    <path d="M246 332L480 520C499 535 525 535 544 520L778 332" fill="none" stroke="url(#edge)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <image href="../public/brand/snowfire_icon.svg" x="443" y="401" width="138" height="194"/>
+</svg>

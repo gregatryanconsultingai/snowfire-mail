@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">SnowFire Customers — Together</title>
+  <path d="M18 64L41 29L64 64Z" fill="#FFCC00"/>
+  <path d="M18 64L34 40L50 64Z" fill="#FD7401"/>
+  <path d="M110 64L87 29L64 64Z" fill="#F9A81A"/>
+  <path d="M110 64L94 40L78 64Z" fill="#FF3E2C"/>
+  <path d="M18 64H64L41 99Z" fill="#00CCFF"/>
+  <path d="M110 64H64L87 99Z" fill="#007AFF"/>
+  <path d="M41 99L64 64L87 99L64 112Z" fill="#99FFFF"/>
+</svg>

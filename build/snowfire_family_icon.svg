@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">SnowFire Family</title>
+  <desc id="desc">Three simple faceted figures in SnowFire's warm and cool brand colors.</desc>
+
+  <!-- Left family member -->
+  <circle cx="34" cy="36" r="10" fill="#FD7401"/>
+  <path d="M13 91L34 50L55 91Z" fill="#007AFF"/>
+  <path d="M13 91L34 50V91Z" fill="#00CCFF"/>
+  <path d="M34 50L55 91H34Z" fill="#0B7CF2"/>
+  <path d="M13 91H55L34 108Z" fill="#99FFFF"/>
+
+  <!-- Right family member -->
+  <circle cx="94" cy="36" r="10" fill="#FFCC00"/>
+  <path d="M73 91L94 50L115 91Z" fill="#FF3E2C"/>
+  <path d="M73 91L94 50V91Z" fill="#FD7401"/>
+  <path d="M94 50L115 91H94Z" fill="#F9A81A"/>
+  <path d="M73 91H115L94 108Z" fill="#FFCC00"/>
+
+  <!-- Child / shared center -->
+  <circle cx="64" cy="59" r="8" fill="#FB64B6"/>
+  <path d="M48 98L64 70L80 98Z" fill="#C27AFF"/>
+  <path d="M48 98L64 70V98Z" fill="#22D3EE"/>
+  <path d="M64 70L80 98H64Z" fill="#007AFF"/>
+  <path d="M48 98H80L64 113Z" fill="#99FFFF"/>
+</svg>
