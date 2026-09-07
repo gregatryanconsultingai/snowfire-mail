@@ -99,26 +99,38 @@ function LabelGlyph({name,icons,size=14}:{name:string;icons:Record<string,string
   return <MetaIcon meta={{label:name,tone:root==='customer'?'customer':root==='family'?'family':root==='internal'?'internal':/^newsletters?$/.test(root)?'newsletter':'general',color:'#777784',icon,iconSrc}} size={size}/>
 }
 
-function FolderSearchPicker({folders,value,onChange}:{folders:GmailLabel[];value:string;onChange:(value:string)=>void}) {
+function FolderSearchPicker({folders,value,onChange,onCreate}:{folders:GmailLabel[];value:string;onChange:(value:string)=>void;onCreate:(path:string)=>Promise<string>}) {
   const listboxId=useId()
   const inputRef=useRef<HTMLInputElement>(null)
   const activeOptionRef=useRef<HTMLButtonElement>(null)
   const [open,setOpen]=useState(false)
   const [query,setQuery]=useState('')
   const [activeIndex,setActiveIndex]=useState(0)
+  const [creating,setCreating]=useState(false)
+  const [createError,setCreateError]=useState('')
   const selected=folders.find(folder=>folder.name===value)
   const selectedPath=selected?folderParts(selected.name).join(' / '):''
   const terms=query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean)
-  const matches=folders.filter(folder=>{const path=folderParts(folder.name).join(' / ').toLocaleLowerCase();return terms.every(term=>path.includes(term))})
+  const matches=terms.length?folders.filter(folder=>{const path=folderParts(folder.name).join(' / ').toLocaleLowerCase();return terms.every(term=>path.includes(term))}):[]
+  const createPath=labelParts(query).join(' / ')
+  const canCreate=Boolean(createPath)&&!folders.some(folder=>folderParts(folder.name).join(' / ').toLocaleLowerCase()===createPath.toLocaleLowerCase())
+  const optionCount=matches.length+(canCreate?1:0)
+  const safeActiveIndex=Math.min(activeIndex,Math.max(0,optionCount-1))
+  const activeOptionId=open&&optionCount?(safeActiveIndex<matches.length?`${listboxId}-${matches[safeActiveIndex].id}`:`${listboxId}-create`):undefined
   useEffect(()=>{if(open)activeOptionRef.current?.scrollIntoView({block:'nearest'})},[activeIndex,open,query])
   const select=(folder:GmailLabel)=>{onChange(folder.name);setQuery('');setOpen(false);inputRef.current?.focus()}
-  const openPicker=()=>{setQuery('');setActiveIndex(Math.max(0,folders.findIndex(folder=>folder.name===value)));setOpen(true)}
+  const create=async()=>{if(!canCreate||creating)return;setCreating(true);setCreateError('');try{const name=await onCreate(createPath);onChange(name);setQuery('');setOpen(false);inputRef.current?.focus()}catch(error){setCreateError(error instanceof Error?error.message:'Could not create the folder')}finally{setCreating(false)}}
+  const openPicker=()=>{setQuery('');setCreateError('');setActiveIndex(0);setOpen(true)}
   return <div className={`folder-search-picker${open?' open':''}`} onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setOpen(false)}}>
     <Search size={13}/>
-    <input ref={inputRef} type="text" role="combobox" aria-label="Destination folder" aria-expanded={open} aria-controls={listboxId} aria-autocomplete="list" aria-activedescendant={open&&matches.length?`${listboxId}-${matches[Math.min(activeIndex,matches.length-1)].id}`:undefined} autoComplete="off" placeholder="Search folders…" value={open?query:selectedPath} onFocus={openPicker} onChange={event=>{setQuery(event.target.value);onChange('');setActiveIndex(0);setOpen(true)}} onKeyDown={event=>{if(event.key==='ArrowDown'){event.preventDefault();setOpen(true);setActiveIndex(index=>Math.min(matches.length-1,index+1))}else if(event.key==='ArrowUp'){event.preventDefault();setOpen(true);setActiveIndex(index=>Math.max(0,index-1))}else if(event.key==='Enter'&&open&&matches.length){event.preventDefault();select(matches[Math.min(activeIndex,matches.length-1)])}else if(event.key==='Escape'&&open){event.preventDefault();setOpen(false)}}}/>
+    <input ref={inputRef} type="text" role="combobox" aria-label="Destination folder" aria-expanded={open} aria-controls={listboxId} aria-autocomplete="list" aria-activedescendant={activeOptionId} aria-busy={creating} autoComplete="off" placeholder="Search or create folder…" value={open?query:selectedPath} readOnly={creating} onFocus={openPicker} onChange={event=>{setQuery(event.target.value);setCreateError('');onChange('');setActiveIndex(0);setOpen(true)}} onKeyDown={event=>{if(event.key==='ArrowDown'&&optionCount){event.preventDefault();setOpen(true);setActiveIndex(index=>Math.min(optionCount-1,index+1))}else if(event.key==='ArrowUp'&&optionCount){event.preventDefault();setOpen(true);setActiveIndex(index=>Math.max(0,index-1))}else if(event.key==='Enter'&&open&&optionCount){event.preventDefault();if(safeActiveIndex<matches.length)select(matches[safeActiveIndex]);else void create()}else if(event.key==='Escape'&&open&&!creating){event.preventDefault();setOpen(false)}}}/>
     <ChevronDown size={13}/>
     {open&&<div className="folder-search-results" id={listboxId} role="listbox" aria-label="Matching folders">
-      {matches.length?matches.map((folder,index)=>{const path=folderParts(folder.name).join(' / ');return <button ref={index===activeIndex?activeOptionRef:undefined} id={`${listboxId}-${folder.id}`} type="button" role="option" aria-selected={folder.name===value} className={index===activeIndex?'active':''} key={folder.id} onMouseDown={event=>event.preventDefault()} onMouseEnter={()=>setActiveIndex(index)} onClick={()=>select(folder)}><Folder size={13}/><span>{path}</span>{folder.name===value&&<Check size={13}/>}</button>}):<p>{query.trim()?<>No folders match “{query.trim()}”</>:<>No folders available</>}</p>}
+      {!terms.length&&<p>Type to search folders or enter a new folder name.</p>}
+      {terms.length&&!matches.length&&<p>No existing folders match “{query.trim()}”.</p>}
+      {matches.map((folder,index)=>{const path=folderParts(folder.name).join(' / ');return <button ref={index===activeIndex?activeOptionRef:undefined} id={`${listboxId}-${folder.id}`} type="button" role="option" aria-selected={folder.name===value} className={index===activeIndex?'active':''} key={folder.id} onMouseDown={event=>event.preventDefault()} onMouseEnter={()=>setActiveIndex(index)} onClick={()=>select(folder)}><Folder size={13}/><span>{path}</span>{folder.name===value&&<Check size={13}/>}</button>})}
+      {canCreate&&<button ref={activeIndex===matches.length?activeOptionRef:undefined} id={`${listboxId}-create`} type="button" role="option" aria-selected={false} className={`folder-search-create${activeIndex===matches.length?' active':''}`} disabled={creating} onMouseDown={event=>event.preventDefault()} onMouseEnter={()=>setActiveIndex(matches.length)} onClick={()=>void create()}><Plus size={14}/><span><b>{creating?'Creating folder…':`Create “${createPath}”`}</b><small>{createPath.includes(' / ')?'New nested folder':'New top-level folder'} · use / for subfolders</small></span></button>}
+      {createError&&<div className="folder-search-error">{createError}</div>}
     </div>}
   </div>
 }
@@ -495,6 +507,30 @@ function App() {
     }catch(e){setRuleError(e instanceof Error?e.message:'Could not save the routing rule')}
     finally{setRuleBusy(false)}
   }
+  const createRoutingFolder = async (path:string) => {
+    const parts=labelParts(path)
+    if(!parts.length)throw new Error('Enter a folder name.')
+    if(!window.snowfire)throw new Error('Connect Gmail before creating a folder.')
+    const known=[...folderLabels]
+    const createdNames:string[]=[]
+    let name=FOLDER_ROOT
+    for(const part of parts){
+      const requested=`${name}/${part}`
+      const existing=known.find(label=>label.name.toLocaleLowerCase()===requested.toLocaleLowerCase())
+      if(existing){name=existing.name;continue}
+      const created=await window.snowfire.gmail.createLabel(requested)
+      name=requested
+      createdNames.push(name)
+      known.push(created)
+    }
+    await refreshLabels()
+    const createdSet=new Set(createdNames)
+    const next=[...folderOrder.filter(item=>!createdSet.has(item)),...createdNames]
+    setFolderOrder(next)
+    window.snowfire.metadata.setFolderOrder(next).catch(()=>{})
+    flash(`Created ${folderParts(name).join(' / ')}`)
+    return name
+  }
   const removeSenderFolderRule = async (email:string) => {setRuleBusy(true);setRuleError('');try{const next=await window.snowfire?.metadata.removeSenderFolderRule(email)||Object.fromEntries(Object.entries(senderFolderRules).filter(([sender])=>sender!==email));setSenderFolderRules(next);flash(`Removed routing rule for ${email}`)}catch(e){setRuleError(e instanceof Error?e.message:'Could not remove the routing rule')}finally{setRuleBusy(false)}}
   const openRoutingForSender = (message:Message) => {const email=normalizeSenderEmail(message.email);setRuleEmail(email);setRuleFolder(senderFolderRules[email]||'');setRuleError('');setRoutingManager(true);setContextMenu(null)}
   const createFolder = async () => {
@@ -685,8 +721,8 @@ function App() {
       {confirmDeleteFolder&&<div className="label-delete-confirm"><div><span><Trash2 size={18}/></span><h3>Delete “{folderName(confirmDeleteFolder.name)}”?</h3><p>This removes the folder{folderLabels.some(label=>label.name.startsWith(`${confirmDeleteFolder.name}/`))?' and its subfolders':''} from Gmail. Emails inside will be archived, not deleted.</p><footer><button disabled={folderBusy} onClick={()=>setConfirmDeleteFolder(null)}>Cancel</button><button className="delete-label-button" disabled={folderBusy} onClick={removeFolder}>{folderBusy?'Deleting…':'Delete folder'}</button></footer></div></div>}
     </section></div>}
     {routingManager&&<div className="label-modal-backdrop" onMouseDown={()=>{if(!ruleBusy)setRoutingManager(false)}}><section className="label-manager routing-manager" role="dialog" aria-modal="true" aria-labelledby="routing-manager-title" onMouseDown={event=>event.stopPropagation()}>
-      <header><div><span className="label-manager-kicker">GMAIL / AUTOMATION</span><h2 id="routing-manager-title">Routing rules</h2><p>Route Inbox mail to an existing folder using the sender's exact email address.</p></div><button className="label-manager-close" aria-label="Close routing rules" disabled={ruleBusy} onClick={()=>setRoutingManager(false)}><X size={18}/></button></header>
-      <section className="folder-routing routing-only"><header><div><FolderInput size={17}/><span><b>Sender routing rules</b><small>Checks new Inbox mail every minute while SnowFire is open.</small></span></div><i>{Object.keys(senderFolderRules).length}</i></header><form onSubmit={event=>{event.preventDefault();createSenderFolderRule()}}><input autoFocus type="email" aria-label="Sender email address" value={ruleEmail} onChange={event=>setRuleEmail(event.target.value)} placeholder="sender@company.com"/><FolderSearchPicker folders={orderedFolderLabels} value={ruleFolder} onChange={setRuleFolder}/><button disabled={ruleBusy||!ruleEmail.trim()||!ruleFolder}><Plus size={14}/>{ruleBusy?'Saving…':'Save rule'}</button></form>{!orderedFolderLabels.length&&<div className="routing-folder-note">Create a folder from the Folders section before adding a routing rule.</div>}{ruleError&&<div className="routing-rule-error">{ruleError}</div>}<div className="routing-rule-list">{Object.entries(senderFolderRules).sort(([a],[b])=>a.localeCompare(b)).map(([email,folderName])=><div key={email}><span><Mail size={14}/></span><div><b>{email}</b><small>Move to {folderParts(folderName).join(' / ')}</small></div><button aria-label={`Remove routing rule for ${email}`} title="Remove rule" disabled={ruleBusy} onClick={()=>removeSenderFolderRule(email)}><X size={14}/></button></div>)}{!Object.keys(senderFolderRules).length&&<p>No sender rules yet.</p>}</div></section>
+      <header><div><span className="label-manager-kicker">GMAIL / AUTOMATION</span><h2 id="routing-manager-title">Routing rules</h2><p>Search or create a destination folder, then route mail using the sender's exact address.</p></div><button className="label-manager-close" aria-label="Close routing rules" disabled={ruleBusy} onClick={()=>setRoutingManager(false)}><X size={18}/></button></header>
+      <section className="folder-routing routing-only"><header><div><FolderInput size={17}/><span><b>Sender routing rules</b><small>Checks new Inbox mail every minute while SnowFire is open.</small></span></div><i>{Object.keys(senderFolderRules).length}</i></header><form onSubmit={event=>{event.preventDefault();createSenderFolderRule()}}><input autoFocus type="email" aria-label="Sender email address" value={ruleEmail} onChange={event=>setRuleEmail(event.target.value)} placeholder="sender@company.com"/><FolderSearchPicker folders={orderedFolderLabels} value={ruleFolder} onChange={setRuleFolder} onCreate={createRoutingFolder}/><button disabled={ruleBusy||!ruleEmail.trim()||!ruleFolder}><Plus size={14}/>{ruleBusy?'Saving…':'Save rule'}</button></form>{!orderedFolderLabels.length&&<div className="routing-folder-note">Search above to create your first folder without leaving routing rules.</div>}{ruleError&&<div className="routing-rule-error">{ruleError}</div>}<div className="routing-rule-list">{Object.entries(senderFolderRules).sort(([a],[b])=>a.localeCompare(b)).map(([email,folderName])=><div key={email}><span><Mail size={14}/></span><div><b>{email}</b><small>Move to {folderParts(folderName).join(' / ')}</small></div><button aria-label={`Remove routing rule for ${email}`} title="Remove rule" disabled={ruleBusy} onClick={()=>removeSenderFolderRule(email)}><X size={14}/></button></div>)}{!Object.keys(senderFolderRules).length&&<p>No sender rules yet.</p>}</div></section>
     </section></div>}
     {connected===false&&<div className="auth-gate"><div className="auth-card"><img src="./brand/snowfire_logo_title_right_light.svg" alt="SnowFire"/><span className="auth-kicker">MAIL / GOOGLE CONNECTION</span><h2>{upgradeRequired?'Add Calendar access.':'Bring your Gmail into SnowFire.'}</h2><p>{upgradeRequired?'Reconnect once so SnowFire can show, create, and edit Google Calendar events alongside your mail.':'Your browser handles Google sign-in. Mail stays between this device and Gmail. After approval, SnowFire saves the connection in your system keyring, with a permission-locked local fallback.'}</p>{!upgradeRequired&&<><label>Desktop OAuth client JSON or client ID<textarea value={credential} onChange={e=>setCredential(e.target.value)} placeholder={'Paste the downloaded OAuth JSON here\n—or paste the client ID'}/></label><button className="oauth-file" onClick={chooseCredentialFile}><FileText size={15}/>{credential.trim()?'Choose a different JSON file':'Choose OAuth JSON file'}</button></>}{authError&&<div className="auth-error">{authError}</div>}<button className="connect-btn" disabled={!upgradeRequired&&!credential.trim()} onClick={connectGmail}>{upgradeRequired?'Reconnect Google':'Continue with Google'} <ArrowLeft size={16}/></button><small>{upgradeRequired?'Your saved OAuth client will be reused.':'Requires the Gmail, People, and Calendar APIs enabled in your Google Cloud project.'}</small></div></div>}
     {folderContextMenu&&<div className="folder-context-menu" style={{left:folderContextMenu.x,top:folderContextMenu.y}} onClick={event=>event.stopPropagation()}><header><Folder size={13}/><span>{folderParts(folderContextMenu.label.name).join(' / ')}</span></header><button onClick={()=>beginFolderCreate(folderParent(folderContextMenu.label.name)===FOLDER_ROOT?'':folderParent(folderContextMenu.label.name))}><Plus size={15}/><span><b>Add folder</b><small>At the same level</small></span></button><button onClick={()=>beginFolderCreate(folderContextMenu.label.name)}><FolderInput size={15}/><span><b>Add subfolder</b><small>Inside {folderName(folderContextMenu.label.name)}</small></span></button></div>}
