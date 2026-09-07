@@ -18,6 +18,11 @@ contextBridge.exposeInMainWorld('snowfire', {
     setSenderFolderRule: (email,folderName) => ipcRenderer.invoke('metadata:set-sender-folder-rule', email, folderName),
     removeSenderFolderRule: email => ipcRenderer.invoke('metadata:remove-sender-folder-rule', email),
     removeSenderFolderRules: folderNames => ipcRenderer.invoke('metadata:remove-sender-folder-rules', folderNames),
+    messagePriorities: () => ipcRenderer.invoke('metadata:message-priorities'),
+    setMessagePriority: (messageId,priority) => ipcRenderer.invoke('metadata:set-message-priority', messageId, priority),
+    senderPriorityRules: () => ipcRenderer.invoke('metadata:sender-priority-rules'),
+    setSenderPriorityRule: (email,priority) => ipcRenderer.invoke('metadata:set-sender-priority-rule', email, priority),
+    removeSenderPriorityRule: email => ipcRenderer.invoke('metadata:remove-sender-priority-rule', email),
     folderOrder: () => ipcRenderer.invoke('metadata:folder-order'),
     setFolderOrder: order => ipcRenderer.invoke('metadata:set-folder-order', order),
     renameFolderReferences: changes => ipcRenderer.invoke('metadata:rename-folder-references', changes)

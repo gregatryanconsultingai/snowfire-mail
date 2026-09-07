@@ -43,6 +43,17 @@ function setSenderFolderRule(email,folderName) { const key=normalizeSenderEmail(
 function removeSenderFolderRule(email) { const rules=readSenderFolderRules();delete rules[normalizeSenderEmail(email)];return writeSenderFolderRules(rules) }
 function removeSenderFolderRules(folderNames=[]) { const removed=new Set((Array.isArray(folderNames)?folderNames:[]).map(name=>String(name||'').trim().toLowerCase()).filter(Boolean)),rules=readSenderFolderRules();for(const [email,folderName] of Object.entries(rules))if(removed.has(folderName.toLowerCase()))delete rules[email];return writeSenderFolderRules(rules) }
 
+const PRIORITY_LEVELS = new Set(['top','high','medium','low'])
+const messagePrioritiesPath = () => path.join(app.getPath('userData'), 'message-priorities.json')
+const senderPriorityRulesPath = () => path.join(app.getPath('userData'), 'sender-priority-rules.json')
+function readPriorityIndex(filePath,keyNormalizer=value=>String(value||'').trim()) { try { const stored=JSON.parse(fs.readFileSync(filePath,'utf8')),result={};for(const [rawKey,rawPriority] of Object.entries(stored)){const key=keyNormalizer(rawKey),priority=String(rawPriority||'').trim().toLowerCase();if(key&&PRIORITY_LEVELS.has(priority))result[key]=priority}return result } catch { return {} } }
+function writePriorityIndex(filePath,index) { fs.writeFileSync(filePath,JSON.stringify(index,null,2),{mode:0o600});return index }
+function readMessagePriorities() { return readPriorityIndex(messagePrioritiesPath()) }
+function setMessagePriority(messageId,priority) { const key=String(messageId||'').trim(),level=String(priority||'').trim().toLowerCase();if(!key)throw new Error('Choose an email first.');if(level&&!PRIORITY_LEVELS.has(level))throw new Error('Choose a valid priority.');const index=readMessagePriorities();if(level)index[key]=level;else delete index[key];return writePriorityIndex(messagePrioritiesPath(),index) }
+function readSenderPriorityRules() { return readPriorityIndex(senderPriorityRulesPath(),normalizeSenderEmail) }
+function setSenderPriorityRule(email,priority) { const key=normalizeSenderEmail(email),level=String(priority||'').trim().toLowerCase();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(key))throw new Error('Enter a valid sender email address.');if(!PRIORITY_LEVELS.has(level))throw new Error('Choose a valid priority.');const index=readSenderPriorityRules();index[key]=level;return writePriorityIndex(senderPriorityRulesPath(),index) }
+function removeSenderPriorityRule(email) { const index=readSenderPriorityRules();delete index[normalizeSenderEmail(email)];return writePriorityIndex(senderPriorityRulesPath(),index) }
+
 function publicPendingSend(entry) { return { id:entry.id, sendAt:entry.sendAt, message:entry.message } }
 function broadcastSendStatus(status) {
   for (const win of BrowserWindow.getAllWindows()) if (!win.isDestroyed()) win.webContents.send('gmail:send-status', status)
@@ -167,6 +178,11 @@ app.whenReady().then(() => {
   handle('metadata:set-sender-folder-rule', (_e, email, folderName) => setSenderFolderRule(email, folderName))
   handle('metadata:remove-sender-folder-rule', (_e, email) => removeSenderFolderRule(email))
   handle('metadata:remove-sender-folder-rules', (_e, folderNames) => removeSenderFolderRules(folderNames))
+  handle('metadata:message-priorities', () => readMessagePriorities())
+  handle('metadata:set-message-priority', (_e, messageId, priority) => setMessagePriority(messageId, priority))
+  handle('metadata:sender-priority-rules', () => readSenderPriorityRules())
+  handle('metadata:set-sender-priority-rule', (_e, email, priority) => setSenderPriorityRule(email, priority))
+  handle('metadata:remove-sender-priority-rule', (_e, email) => removeSenderPriorityRule(email))
   handle('metadata:folder-order', () => readFolderOrder())
   handle('metadata:set-folder-order', (_e, order) => setFolderOrder(order))
   handle('metadata:rename-folder-references', (_e, changes) => renameFolderReferences(changes))
